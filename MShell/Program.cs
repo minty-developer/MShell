@@ -1,23 +1,26 @@
 ﻿using System.Diagnostics;
 
-namespace MShell;
+using Minty.Shell.FileManager;
+using Minty.Shell.ProcessManager;
+using Minty.Shell.UIManager;
+
+namespace Minty.Shell;
 
 public static class Program
 {
-    private static string currentDirectory = AppContext.BaseDirectory;
     private static bool AppRunning = true;
 
-    public static void Main()
+    public static async Task Main()
     {
         Console.Clear();
-        Console.WriteLine(value: "(c) Minty Shell. All rights reserved");
-        Console.WriteLine();
+        UIM.WriteLine(message: "(c) Minty Shell. All rights reserved");
+        UIM.WriteLine();
 
-        Console.CancelKeyPress += (sender, e) => { e.Cancel = true; };
+        Console.CancelKeyPress += (_, _) => { AppRunning = false; };
 
         while(AppRunning)
         {
-            Console.Write(value: $"{GetDisplayPath(currentDirectory)}>> ");
+            UIM.Write(message: $"{FM.GetDisplayPath(FM.CurrentDirectory)}>> ");
             string? command = Console.ReadLine();
             if(string.IsNullOrWhiteSpace(value: command)) { continue; }
             string[] commands = command.Split(' ', StringSplitOptions.RemoveEmptyEntries);
@@ -30,8 +33,8 @@ public static class Program
                 case "cls":
                 case "clear":
                     Console.Clear();
-                    Console.WriteLine(value: "(c) Minty Shell. All rights reserved");
-                    Console.WriteLine();
+                    UIM.WriteLine(message: "(c) Minty Shell. All rights reserved");
+                    UIM.WriteLine();
                     break;
                 case "calc":
                 case "calculator":
@@ -40,109 +43,52 @@ public static class Program
                 case "move":
                     if(commands.Length == 1)
                     {
-                        WriteResult(message: "To know about this command, type \"move [/?|--help|-h]");
+                        UIM.WriteResult(message: "To know about this command, type \"move [/?|--help|-h]");
                         continue;
                     }
                     if(commands[1] == "/?" || commands[1] == "--help" || commands[1] == "-h")
                     {
-                        WriteResult(message: "move [option]\nmove [path]\n\nMove current directory\n\noption:\n    - /?, --help, -h: Show how to use this command");
+                        UIM.WriteResult(message: "move [option]\nmove [path]\n\nMove current directory\n\noption:\n    - /?, --help, -h: Show how to use this command");
                         continue;
                     }
-                    if(!MoveToDirectory(commands[1]))
+                    if(!FM.MoveToDirectory(commands[1]))
                     {
-                        WriteResult(message: "Moving is not allowed. Is Directory Exsist?", textColor: ConsoleColor.Yellow);
+                        UIM.WriteResult(message: "Moving is not allowed. Is Directory Exsist?", textColor: ConsoleColor.Yellow);
                     }
                     break;
                 case "file":
                     if(commands.Length == 1)
                     {
-                        WriteResult(message: "To know about this command, type \"file [/?|--help|-h]\"");
+                        UIM.WriteResult(message: "To know about this command, type \"file [/?|--help|-h]\"");
                         continue;
                     }
                     switch(commands[1])
                     {
                         case "current":
-                            WriteResult(message: currentDirectory);
+                            UIM.WriteResult(message: FM.CurrentDirectory);
                             break;
                         case "/?": case "--help": case "-h":
-                            WriteResult(message: "file [option]\n\nControl Files\n\noption:\n    - current: Show this shells' current directory\n    - tree: Show folder & file tree that starts from current directory\n    - create: Create new file or directory\n    - edit: Edit file\n    - move: Move file to another directory\n    - remove: Remove file or directory\n    - /?, --help, -h: Show how to use this command.");
+                            UIM.WriteResult(message: "file [option]\n\nControl Files\n\noption:\n    - current: Show this shells' current directory\n    - tree: Show folder & file tree that starts from current directory\n    - list: Do file action like GUI\n    - create: Create new file or directory\n    - edit: Edit file\n    - move: Move file to another directory\n    - remove: Remove file or directory\n    - /?, --help, -h: Show how to use this command.");
                             break;
                         case "tree":
-                            WriteResult(message: GetFolderTree(currentDirectory));
+                            UIM.WriteResult(message: FM.GetFolderTree(FM.CurrentDirectory));
                             break;
                         case "create":
                         case "remove":
                         case "move":
+                        case "list":
                         case "edit":
-                            WriteResult(message: "It has not been implemented.", textColor: ConsoleColor.Yellow);
+                            UIM.WriteResult(message: "It has not been implemented.", textColor: ConsoleColor.Yellow);
                             break;
                         default:
-                            WriteResult(message: $"Unknow Option: {commands[1]}", textColor: ConsoleColor.Red);
+                            UIM.WriteResult(message: $"Unknown Option: {commands[1]}", textColor: ConsoleColor.Red);
                             break;
                     }
                     break;
                 default:
-                    WriteResult(message: $"Unknown Command: {commands[0]}", textColor: ConsoleColor.Red);
+                    await PM.ExecuteProcessAsync(commands[0], commands[1..]);
                     break;
             }
         }
-    }
-
-    private static string GetDisplayPath(string path, int keepFolders = 3)
-    {
-        string fullPath = Path.GetFullPath(path);
-        string rootPath = Path.GetPathRoot(fullPath)!;
-
-        string relativePath = Path.GetRelativePath(rootPath, fullPath);
-
-        string[] folders = relativePath.Split(
-            [Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar],
-            StringSplitOptions.RemoveEmptyEntries
-        );
-
-        if (folders.Length <= keepFolders)
-            return fullPath;
-
-        string shortenedPath = Path.Combine(
-            rootPath,
-            "...",
-            Path.Combine([.. folders.Skip(folders.Length - keepFolders)])
-        );
-
-        return shortenedPath;
-    }
-
-    private static bool MoveToDirectory(string path)
-    {
-        string targetPath = Path.GetFullPath(Path.Join(currentDirectory, path));
-
-        if (!Directory.Exists(targetPath))
-            return false;
-
-        currentDirectory = targetPath;
-        return true;
-    }
-
-    private static string GetFolderTree(string path)
-    {
-        DirectoryInfo directoryInfo = new(path);
-        DirectoryInfo[] directories = directoryInfo.GetDirectories();
-        string treeString = string.Empty;
-        if(directories.Length == 0) { return ""; }
-        treeString += $"{Path.GetDirectoryName(path)}\n";
-        for(int i = 0; i < directories.Length - 1; i++)
-        {
-            treeString += $"  ├─ {directories[i].Name}\n";
-        }
-        treeString += $"  └─ {directories[^1].Name}";
-        return treeString;
-    }
-
-    private static void WriteResult(string message, ConsoleColor textColor = ConsoleColor.White)
-    {
-        Console.ForegroundColor = textColor;
-        Console.WriteLine(message);
-        Console.WriteLine();
-        Console.ResetColor();
     }
 }
