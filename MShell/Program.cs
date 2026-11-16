@@ -8,7 +8,7 @@ namespace Minty.Shell;
 
 public static class Program
 {
-    private static readonly string VERSION = "v1.0.0";
+    private static readonly string VERSION = "v1.1.0";
     public static async Task Main()
     {
         Console.OutputEncoding = Encoding.UTF8;
