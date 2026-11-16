@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="Dev/Dev.csproj" />
+  <Project Path="File/File.csproj" />
+  <Project Path="MShell/MShell.csproj" />
+  <Project Path="Process/Process.csproj" />
+</Solution>

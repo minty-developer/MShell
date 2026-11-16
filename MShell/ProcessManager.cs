@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Text;
 using Minty.Shell.UIManager;
 
 namespace Minty.Shell.ProcessManager;
@@ -16,7 +17,10 @@ public static class PM
             RedirectStandardOutput = true,
             RedirectStandardError = true,
             RedirectStandardInput = false,
-            CreateNoWindow = true
+            CreateNoWindow = true,
+
+            StandardOutputEncoding = Encoding.UTF8,
+            StandardErrorEncoding = Encoding.UTF8
         };
 
         foreach (string argument in arguments)

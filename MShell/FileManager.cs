@@ -6,25 +6,28 @@ public static class FM
     public static string GetDisplayPath(string path, int keepFolders = 3)
     {
         string fullPath = Path.GetFullPath(path);
-        string rootPath = Path.GetPathRoot(fullPath)!;
+        return fullPath;
 
-        string relativePath = Path.GetRelativePath(rootPath, fullPath);
+        // 전체 경로를 보여주기 위해 주석 처리
+        // string rootPath = Path.GetPathRoot(fullPath)!;
 
-        string[] folders = relativePath.Split(
-            [Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar],
-            StringSplitOptions.RemoveEmptyEntries
-        );
+        // string relativePath = Path.GetRelativePath(rootPath, fullPath);
 
-        if (folders.Length <= keepFolders)
-            return fullPath;
+        // string[] folders = relativePath.Split(
+        //     [Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar],
+        //     StringSplitOptions.RemoveEmptyEntries
+        // );
 
-        string shortenedPath = Path.Combine(
-            rootPath,
-            "...",
-            Path.Combine([.. folders.Skip(folders.Length - keepFolders)])
-        );
+        // if (folders.Length <= keepFolders)
+        //     return fullPath;
 
-        return shortenedPath;
+        // string shortenedPath = Path.Combine(
+        //     rootPath,
+        //     "...",
+        //     Path.Combine([.. folders.Skip(folders.Length - keepFolders)])
+        // );
+
+        // return shortenedPath;
     }
 
     public static bool MoveToDirectory(string path)
@@ -35,21 +38,7 @@ public static class FM
             return false;
 
         CurrentDirectory = targetPath;
+        System.Environment.CurrentDirectory = targetPath;
         return true;
-    }
-
-    public static string GetFolderTree(string path)
-    {
-        DirectoryInfo directoryInfo = new(path);
-        DirectoryInfo[] directories = directoryInfo.GetDirectories();
-        string treeString = string.Empty;
-        if(directories.Length == 0) { return ""; }
-        treeString += $"{Path.GetDirectoryName(path)}\n";
-        for(int i = 0; i < directories.Length - 1; i++)
-        {
-            treeString += $"  ├─ {directories[i].Name}\n";
-        }
-        treeString += $"  └─ {directories[^1].Name}";
-        return treeString;
     }
 }
